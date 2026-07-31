@@ -158,7 +158,7 @@ async function loadTodos() {
     if (Array.isArray(data)) serverData = data;
   } catch {}
 
-  if (serverData && serverData.length) {
+  if (Array.isArray(serverData)) {
     todos = serverData;
     localStorage.setItem('todos', JSON.stringify(todos));
   } else {
