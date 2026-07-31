@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo List</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <h1>My Todo List</h1>
+    <form id="todo-form">
+      <input type="text" id="todo-input" placeholder="What needs to be done?" autocomplete="off" required>
+      <div class="datetime-row">
+        <label>Date <input type="date" id="todo-due-date"></label>
+        <div class="time-select">
+          <label>Time</label>
+          <div>
+            <select id="todo-due-hours"></select>
+            <span>:</span>
+            <select id="todo-due-minutes"></select>
+          </div>
+        </div>
+      </div>
+      <div class="extra-row">
+        <input type="text" id="todo-location" placeholder="Google Maps link (optional)" autocomplete="off">
+        <input type="text" id="todo-contact" placeholder="Contact (optional)" autocomplete="off">
+      </div>
+      <textarea id="todo-description" placeholder="Description (optional)" rows="2"></textarea>
+      <button type="submit">Add</button>
+    </form>
+    <ul id="todo-list"></ul>
+    <div class="filters">
+      <button class="filter active" data-filter="all">All</button>
+      <button class="filter" data-filter="active">Active</button>
+      <button class="filter" data-filter="completed">Completed</button>
+      <span id="remaining-count"></span>
+      <button id="clear-completed">Clear completed</button>
+    </div>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
