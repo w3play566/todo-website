@@ -1,11 +1,14 @@
 const form = document.getElementById('todo-form');
 const input = document.getElementById('todo-input');
+const micBtn = document.getElementById('mic-btn');
 const dateInput = document.getElementById('todo-due-date');
 const hoursSelect = document.getElementById('todo-due-hours');
 const minutesSelect = document.getElementById('todo-due-minutes');
 const locationInput = document.getElementById('todo-location');
 const contactInput = document.getElementById('todo-contact');
 const descriptionInput = document.getElementById('todo-description');
+const categoryInput = document.getElementById('todo-category');
+const catFilterBtns = document.querySelectorAll('.cat-filter');
 const list = document.getElementById('todo-list');
 const remainingCount = document.getElementById('remaining-count');
 const clearCompletedBtn = document.getElementById('clear-completed');
@@ -13,6 +16,7 @@ const filterBtns = document.querySelectorAll('.filter');
 
 let todos = [];
 let currentFilter = 'all';
+let currentCategory = '';
 
 function populateSelect(select, count, pad) {
   const empty = document.createElement('option');
@@ -29,6 +33,58 @@ function populateSelect(select, count, pad) {
 
 populateSelect(hoursSelect, 24, 2);
 populateSelect(minutesSelect, 60, 2);
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let listening = false;
+
+if (SR) {
+  recognition = new SR();
+  recognition.interimResults = true;
+  recognition.continuous = true;
+  recognition.onresult = (e) => {
+    let transcript = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      transcript += e.results[i][0].transcript;
+    }
+    input.value = transcript.trim();
+  };
+  recognition.onend = () => {
+    listening = false;
+    micBtn.classList.remove('listening');
+    micBtn.textContent = '\ud83c\udfa4';
+  };
+  recognition.onerror = () => {
+    listening = false;
+    micBtn.classList.remove('listening');
+    micBtn.textContent = '\ud83c\udfa4';
+  };
+} else {
+  micBtn.style.display = 'none';
+}
+
+function startListening() {
+  listening = true;
+  micBtn.classList.add('listening');
+  micBtn.textContent = '\u23f9';
+  input.value = '';
+  try {
+    recognition.start();
+  } catch {}
+}
+
+function stopListening() {
+  listening = false;
+  micBtn.classList.remove('listening');
+  micBtn.textContent = '\ud83c\udfa4';
+  recognition.stop();
+}
+
+micBtn.addEventListener('click', () => {
+  if (!recognition) return;
+  if (listening) stopListening();
+  else startListening();
+});
 
 async function save() {
   localStorage.setItem('todos', JSON.stringify(todos));
@@ -57,8 +113,8 @@ function buildSeed() {
 
   const todosList = [
     {
-      id: 1,
-      text: 'Grocery shopping',
+      
+      category: 'Shopping',
       completed: false,
       due: `${today}T10:30`,
       location: 'Whole Foods',
@@ -66,8 +122,8 @@ function buildSeed() {
       description: 'Milk, eggs, bread, coffee beans, and some fruit.',
     },
     {
-      id: 2,
-      text: 'Dentist appointment',
+      
+      category: 'Health',
       completed: false,
       due: iso(1, 9, 15),
       location: 'Bright Smile Dental, 12 Elm St',
@@ -75,8 +131,8 @@ function buildSeed() {
       description: 'Bring insurance card. Root canal follow-up.',
     },
     {
-      id: 3,
-      text: 'Finish project report',
+      
+      category: 'Work',
       completed: false,
       due: iso(2, 17, 0),
       location: null,
@@ -84,8 +140,8 @@ function buildSeed() {
       description: 'Wrap up the Q3 summary and email it to the team.',
     },
     {
-      id: 4,
-      text: 'Call the plumber',
+      
+      category: 'Home',
       completed: false,
       due: iso(-1, 14, 0),
       location: null,
@@ -93,8 +149,8 @@ function buildSeed() {
       description: 'Leaky faucet in the kitchen.',
     },
     {
-      id: 5,
-      text: 'Water the plants',
+      
+      category: 'Home',
       completed: false,
       due: null,
       location: null,
@@ -102,8 +158,8 @@ function buildSeed() {
       description: null,
     },
     {
-      id: 6,
-      text: 'Pick up dry cleaning',
+      
+      category: 'Personal',
       completed: true,
       due: iso(0, 8, 0),
       location: 'Sunshine Cleaners',
@@ -111,8 +167,8 @@ function buildSeed() {
       description: null,
     },
     {
-      id: 7,
-      text: 'Renew gym membership',
+      
+      category: 'Health',
       completed: true,
       due: iso(-2, 12, 0),
       location: null,
@@ -120,8 +176,8 @@ function buildSeed() {
       description: 'Auto-renewal was on hold.',
     },
     {
-      id: 8,
-      text: 'Team lunch reservation',
+      
+      category: 'Work',
       completed: true,
       due: `${today}T12:30`,
       location: 'La Trattoria',
@@ -129,8 +185,8 @@ function buildSeed() {
       description: 'Confirmation number 4821.',
     },
     {
-      id: 9,
-      text: 'Read chapter 5 of design book',
+      
+      category: 'Personal',
       completed: true,
       due: null,
       location: null,
@@ -138,8 +194,8 @@ function buildSeed() {
       description: null,
     },
     {
-      id: 10,
-      text: 'Order birthday gift',
+      
+      category: 'Family',
       completed: true,
       due: iso(-3, 16, 45),
       location: null,
@@ -222,8 +278,9 @@ function sortTodos(list) {
 function render() {
   list.innerHTML = '';
   const filtered = todos.filter((todo) => {
-    if (currentFilter === 'active') return !todo.completed;
-    if (currentFilter === 'completed') return todo.completed;
+    if (currentFilter === 'active' && todo.completed) return false;
+    if (currentFilter === 'completed' && !todo.completed) return false;
+    if (currentCategory && todo.category !== currentCategory) return false;
     return true;
   });
   sortTodos(filtered);
@@ -248,6 +305,12 @@ function render() {
     const span = document.createElement('span');
     span.className = 'todo-text';
     span.textContent = todo.text;
+    if (todo.category) {
+      const badge = document.createElement('span');
+      badge.className = 'todo-category cat-' + todo.category.toLowerCase();
+      badge.textContent = todo.category;
+      span.appendChild(badge);
+    }
 
     textWrap.appendChild(span);
     if (todo.due) {
@@ -326,6 +389,7 @@ form.addEventListener('submit', (e) => {
     text,
     completed: false,
     due,
+    category: categoryInput.value || null,
     location: locationInput.value.trim() || null,
     contact: contactInput.value.trim() || null,
     description: descriptionInput.value.trim() || null,
@@ -339,6 +403,7 @@ form.addEventListener('submit', (e) => {
   locationInput.value = '';
   contactInput.value = '';
   descriptionInput.value = '';
+  categoryInput.value = '';
   input.focus();
 });
 
@@ -353,6 +418,15 @@ filterBtns.forEach((btn) => {
     filterBtns.forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
     currentFilter = btn.dataset.filter;
+    render();
+  });
+});
+
+catFilterBtns.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    catFilterBtns.forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCategory = btn.dataset.category;
     render();
   });
 });

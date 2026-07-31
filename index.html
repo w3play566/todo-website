@@ -10,7 +10,10 @@
   <main class="app">
     <h1>My Todo List</h1>
     <form id="todo-form">
-      <input type="text" id="todo-input" placeholder="What needs to be done?" autocomplete="off" required>
+      <div class="input-row">
+        <input type="text" id="todo-input" placeholder="What needs to be done?" autocomplete="off" required>
+        <button type="button" id="mic-btn" title="Voice input">&#127908;</button>
+      </div>
       <div class="datetime-row">
         <label>Date <input type="date" id="todo-due-date"></label>
         <div class="time-select">
@@ -23,12 +26,32 @@
         </div>
       </div>
       <div class="extra-row">
+        <select id="todo-category">
+          <option value="">Category</option>
+          <option value="Work">Work</option>
+          <option value="Personal">Personal</option>
+          <option value="Health">Health</option>
+          <option value="Family">Family</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="Home">Home</option>
+          <option value="Shopping">Shopping</option>
+        </select>
         <input type="text" id="todo-location" placeholder="Google Maps link (optional)" autocomplete="off">
         <input type="text" id="todo-contact" placeholder="Contact (optional)" autocomplete="off">
       </div>
       <textarea id="todo-description" placeholder="Description (optional)" rows="2"></textarea>
       <button type="submit">Add</button>
     </form>
+    <div class="category-filters">
+      <button class="cat-filter active" data-category="">All</button>
+      <button class="cat-filter" data-category="Work">Work</button>
+      <button class="cat-filter" data-category="Personal">Personal</button>
+      <button class="cat-filter" data-category="Health">Health</button>
+      <button class="cat-filter" data-category="Family">Family</button>
+      <button class="cat-filter" data-category="Entertainment">Entertainment</button>
+      <button class="cat-filter" data-category="Home">Home</button>
+      <button class="cat-filter" data-category="Shopping">Shopping</button>
+    </div>
     <ul id="todo-list"></ul>
     <div class="filters">
       <button class="filter active" data-filter="all">All</button>
