@@ -11,19 +11,6 @@ const remainingCount = document.getElementById('remaining-count');
 const clearCompletedBtn = document.getElementById('clear-completed');
 const filterBtns = document.querySelectorAll('.filter');
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBzGVGrnuXialwffgPwk7YGnCAJGEYSEvg",
-  authDomain: "todo-website-85a0b.firebaseapp.com",
-  databaseURL: "https://todo-website-85a0b-default-rtdb.europe-west1.firebasedatabase.app/",
-  projectId: "todo-website-85a0b",
-  storageBucket: "todo-website-85a0b.firebasestorage.app",
-  messagingSenderId: "782344780130",
-  appId: "1:782344780130:web:ffa0f5e82c667e7fdf943b",
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const todosRef = db.ref('todos');
-
 let todos = [];
 let currentFilter = 'all';
 
@@ -43,9 +30,15 @@ function populateSelect(select, count, pad) {
 populateSelect(hoursSelect, 24, 2);
 populateSelect(minutesSelect, 60, 2);
 
-function save() {
+async function save() {
   localStorage.setItem('todos', JSON.stringify(todos));
-  todosRef.set(todos);
+  try {
+    await fetch('/api/todos', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(todos),
+    });
+  } catch {}
 }
 
 function buildSeed() {
@@ -157,19 +150,27 @@ function buildSeed() {
   return todosList;
 }
 
-todosRef.on('value', (snap) => {
-  const val = snap.val();
-  if (Array.isArray(val)) {
-    todos = val;
+async function loadTodos() {
+  let serverData = null;
+  try {
+    const res = await fetch('/api/todos');
+    const data = await res.json();
+    if (Array.isArray(data)) serverData = data;
+  } catch {}
+
+  if (serverData && serverData.length) {
+    todos = serverData;
     localStorage.setItem('todos', JSON.stringify(todos));
   } else {
     const local = JSON.parse(localStorage.getItem('todos') || 'null');
     todos = Array.isArray(local) && local.length ? local : buildSeed();
     localStorage.setItem('todos', JSON.stringify(todos));
-    todosRef.set(todos);
+    save();
   }
   render();
-});
+}
+
+loadTodos();
 
 function formatDate(value) {
   const d = new Date(value);
