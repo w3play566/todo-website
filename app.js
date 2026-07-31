@@ -8,6 +8,8 @@ const locationInput = document.getElementById('todo-location');
 const contactInput = document.getElementById('todo-contact');
 const descriptionInput = document.getElementById('todo-description');
 const categoryInput = document.getElementById('todo-category');
+const priorityInput = document.getElementById('todo-priority');
+const sortSelect = document.getElementById('sort-select');
 const catFilterBtns = document.querySelectorAll('.cat-filter');
 const list = document.getElementById('todo-list');
 const remainingCount = document.getElementById('remaining-count');
@@ -17,6 +19,9 @@ const filterBtns = document.querySelectorAll('.filter');
 let todos = [];
 let currentFilter = 'all';
 let currentCategory = '';
+let sortMode = 'due';
+
+const PRIORITY_RANK = { High: 0, Medium: 1, Low: 2 };
 
 function populateSelect(select, count, pad) {
   const empty = document.createElement('option');
@@ -113,7 +118,9 @@ function buildSeed() {
 
   const todosList = [
     {
-      
+      id: 1,
+      text: 'Grocery shopping',
+      priority: 'Medium',
       category: 'Shopping',
       completed: false,
       due: `${today}T10:30`,
@@ -122,7 +129,9 @@ function buildSeed() {
       description: 'Milk, eggs, bread, coffee beans, and some fruit.',
     },
     {
-      
+      id: 2,
+      text: 'Dentist appointment',
+      priority: 'High',
       category: 'Health',
       completed: false,
       due: iso(1, 9, 15),
@@ -131,7 +140,9 @@ function buildSeed() {
       description: 'Bring insurance card. Root canal follow-up.',
     },
     {
-      
+      id: 3,
+      text: 'Finish project report',
+      priority: 'High',
       category: 'Work',
       completed: false,
       due: iso(2, 17, 0),
@@ -140,7 +151,9 @@ function buildSeed() {
       description: 'Wrap up the Q3 summary and email it to the team.',
     },
     {
-      
+      id: 4,
+      text: 'Call the plumber',
+      priority: 'Low',
       category: 'Home',
       completed: false,
       due: iso(-1, 14, 0),
@@ -149,7 +162,9 @@ function buildSeed() {
       description: 'Leaky faucet in the kitchen.',
     },
     {
-      
+      id: 5,
+      text: 'Water the plants',
+      priority: 'Low',
       category: 'Home',
       completed: false,
       due: null,
@@ -158,7 +173,9 @@ function buildSeed() {
       description: null,
     },
     {
-      
+      id: 6,
+      text: 'Pick up dry cleaning',
+      priority: 'Low',
       category: 'Personal',
       completed: true,
       due: iso(0, 8, 0),
@@ -167,7 +184,9 @@ function buildSeed() {
       description: null,
     },
     {
-      
+      id: 7,
+      text: 'Renew gym membership',
+      priority: 'Medium',
       category: 'Health',
       completed: true,
       due: iso(-2, 12, 0),
@@ -176,7 +195,9 @@ function buildSeed() {
       description: 'Auto-renewal was on hold.',
     },
     {
-      
+      id: 8,
+      text: 'Team lunch reservation',
+      priority: 'Medium',
       category: 'Work',
       completed: true,
       due: `${today}T12:30`,
@@ -185,7 +206,9 @@ function buildSeed() {
       description: 'Confirmation number 4821.',
     },
     {
-      
+      id: 9,
+      text: 'Read chapter 5 of design book',
+      priority: 'Low',
       category: 'Personal',
       completed: true,
       due: null,
@@ -194,7 +217,9 @@ function buildSeed() {
       description: null,
     },
     {
-      
+      id: 10,
+      text: 'Order birthday gift',
+      priority: 'High',
       category: 'Family',
       completed: true,
       due: iso(-3, 16, 45),
@@ -265,14 +290,23 @@ function isOverdue(todo) {
 }
 
 function sortTodos(list) {
-  return list.sort((a, b) => {
+  const byDue = (a, b) => {
     const ta = a.due || '';
     const tb = b.due || '';
     if (ta === tb) return 0;
     if (!ta) return 1;
     if (!tb) return -1;
     return new Date(ta) - new Date(tb);
-  });
+  };
+  const byPriority = (a, b) => {
+    const ra = a.priority === undefined || a.priority === null ? 3 : PRIORITY_RANK[a.priority] ?? 3;
+    const rb = b.priority === undefined || b.priority === null ? 3 : PRIORITY_RANK[b.priority] ?? 3;
+    return ra - rb;
+  };
+  if (sortMode === 'priority') {
+    return list.sort((a, b) => byPriority(a, b) || byDue(a, b));
+  }
+  return list.sort((a, b) => byDue(a, b) || byPriority(a, b));
 }
 
 function render() {
@@ -304,7 +338,13 @@ function render() {
 
     const span = document.createElement('span');
     span.className = 'todo-text';
-    span.textContent = todo.text;
+    if (todo.priority) {
+      const pri = document.createElement('span');
+      pri.className = 'todo-priority pri-' + todo.priority.toLowerCase();
+      pri.textContent = todo.priority;
+      span.appendChild(pri);
+    }
+    span.appendChild(document.createTextNode(todo.text));
     if (todo.category) {
       const badge = document.createElement('span');
       badge.className = 'todo-category cat-' + todo.category.toLowerCase();
@@ -389,6 +429,7 @@ form.addEventListener('submit', (e) => {
     text,
     completed: false,
     due,
+    priority: priorityInput.value || null,
     category: categoryInput.value || null,
     location: locationInput.value.trim() || null,
     contact: contactInput.value.trim() || null,
@@ -404,6 +445,7 @@ form.addEventListener('submit', (e) => {
   contactInput.value = '';
   descriptionInput.value = '';
   categoryInput.value = '';
+  priorityInput.value = '';
   input.focus();
 });
 
@@ -429,4 +471,9 @@ catFilterBtns.forEach((btn) => {
     currentCategory = btn.dataset.category;
     render();
   });
+});
+
+sortSelect.addEventListener('change', () => {
+  sortMode = sortSelect.value;
+  render();
 });

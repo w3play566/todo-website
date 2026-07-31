@@ -26,6 +26,12 @@
         </div>
       </div>
       <div class="extra-row">
+        <select id="todo-priority">
+          <option value="">Priority</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
         <select id="todo-category">
           <option value="">Category</option>
           <option value="Work">Work</option>
@@ -57,6 +63,10 @@
       <button class="filter active" data-filter="all">All</button>
       <button class="filter" data-filter="active">Active</button>
       <button class="filter" data-filter="completed">Completed</button>
+      <select id="sort-select" title="Sort by">
+        <option value="due">Sort: Due date</option>
+        <option value="priority">Sort: Priority</option>
+      </select>
       <span id="remaining-count"></span>
       <button id="clear-completed">Clear completed</button>
     </div>

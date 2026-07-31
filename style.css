@@ -245,6 +245,20 @@ button:hover {
 .todo-category.cat-home { background: #14b8a6; }
 .todo-category.cat-shopping { background: #ef4444; }
 
+.todo-item .todo-priority {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-right: 6px;
+  color: #fff;
+  vertical-align: middle;
+}
+
+.todo-priority.pri-high { background: #ef4444; }
+.todo-priority.pri-medium { background: #f59e0b; }
+.todo-priority.pri-low { background: #10b981; }
+
 .todo-item .todo-time {
   font-size: 0.8rem;
   color: #888;
@@ -339,6 +353,21 @@ button:hover {
 
 #clear-completed:hover {
   background: #fdecea;
+}
+
+.filters select {
+  padding: 5px 8px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: #666;
+  background: #fff;
+}
+
+.filters select:focus {
+  outline: none;
+  border-color: #667eea;
 }
 
 #remaining-count {
