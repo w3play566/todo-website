@@ -259,6 +259,10 @@ button:hover {
 .todo-priority.pri-medium { background: #f59e0b; }
 .todo-priority.pri-low { background: #10b981; }
 
+.todo-item.pri-row-high { border-left: 4px solid #ef4444; }
+.todo-item.pri-row-medium { border-left: 4px solid #f59e0b; }
+.todo-item.pri-row-low { border-left: 4px solid #10b981; }
+
 .todo-item .todo-time {
   font-size: 0.8rem;
   color: #888;

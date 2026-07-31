@@ -322,7 +322,11 @@ function render() {
   filtered.forEach((todo) => {
     const li = document.createElement('li');
     const overdue = isOverdue(todo);
-    li.className = 'todo-item' + (todo.completed ? ' completed' : '') + (overdue ? ' overdue' : '');
+    li.className =
+      'todo-item' +
+      (todo.completed ? ' completed' : '') +
+      (overdue ? ' overdue' : '') +
+      (todo.priority ? ' pri-row-' + todo.priority.toLowerCase() : '');
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
