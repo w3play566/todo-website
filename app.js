@@ -172,6 +172,26 @@ async function loadTodos() {
 
 loadTodos();
 
+let syncing = false;
+async function pollServer() {
+  if (syncing) return;
+  syncing = true;
+  try {
+    const res = await fetch('/api/todos');
+    const data = await res.json();
+    if (!Array.isArray(data)) return;
+    if (JSON.stringify(data) !== JSON.stringify(todos)) {
+      todos = data;
+      localStorage.setItem('todos', JSON.stringify(todos));
+      render();
+    }
+  } catch {
+  } finally {
+    syncing = false;
+  }
+}
+setInterval(pollServer, 2000);
+
 function formatDate(value) {
   const d = new Date(value);
   const hasTime = value.length > 10;
