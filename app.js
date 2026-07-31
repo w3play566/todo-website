@@ -1,27 +1,8 @@
-const form = document.getElementById('todo-form');
-const input = document.getElementById('todo-input');
-const micBtn = document.getElementById('mic-btn');
-const dateInput = document.getElementById('todo-due-date');
-const hoursSelect = document.getElementById('todo-due-hours');
-const minutesSelect = document.getElementById('todo-due-minutes');
-const locationInput = document.getElementById('todo-location');
-const contactInput = document.getElementById('todo-contact');
-const descriptionInput = document.getElementById('todo-description');
-const categoryInput = document.getElementById('todo-category');
-const priorityInput = document.getElementById('todo-priority');
-const sortSelect = document.getElementById('sort-select');
-const catFilterBtns = document.querySelectorAll('.cat-filter');
-const list = document.getElementById('todo-list');
-const remainingCount = document.getElementById('remaining-count');
-const clearCompletedBtn = document.getElementById('clear-completed');
-const filterBtns = document.querySelectorAll('.filter');
+const PRIORITY_RANK = { High: 0, Medium: 1, Low: 2 };
+const isViewPage = !!document.getElementById('todo-list');
+const isAddPage = !!document.getElementById('todo-form');
 
 let todos = [];
-let currentFilter = 'all';
-let currentCategory = '';
-let sortMode = 'due';
-
-const PRIORITY_RANK = { High: 0, Medium: 1, Low: 2 };
 
 function populateSelect(select, count, pad) {
   const empty = document.createElement('option');
@@ -34,72 +15,6 @@ function populateSelect(select, count, pad) {
     opt.textContent = String(i).padStart(pad, '0');
     select.appendChild(opt);
   }
-}
-
-populateSelect(hoursSelect, 24, 2);
-populateSelect(minutesSelect, 60, 2);
-
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition = null;
-let listening = false;
-
-if (SR) {
-  recognition = new SR();
-  recognition.interimResults = true;
-  recognition.continuous = true;
-  recognition.onresult = (e) => {
-    let transcript = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      transcript += e.results[i][0].transcript;
-    }
-    input.value = transcript.trim();
-  };
-  recognition.onend = () => {
-    listening = false;
-    micBtn.classList.remove('listening');
-    micBtn.textContent = '\ud83c\udfa4';
-  };
-  recognition.onerror = () => {
-    listening = false;
-    micBtn.classList.remove('listening');
-    micBtn.textContent = '\ud83c\udfa4';
-  };
-} else {
-  micBtn.style.display = 'none';
-}
-
-function startListening() {
-  listening = true;
-  micBtn.classList.add('listening');
-  micBtn.textContent = '\u23f9';
-  input.value = '';
-  try {
-    recognition.start();
-  } catch {}
-}
-
-function stopListening() {
-  listening = false;
-  micBtn.classList.remove('listening');
-  micBtn.textContent = '\ud83c\udfa4';
-  recognition.stop();
-}
-
-micBtn.addEventListener('click', () => {
-  if (!recognition) return;
-  if (listening) stopListening();
-  else startListening();
-});
-
-async function save() {
-  localStorage.setItem('todos', JSON.stringify(todos));
-  try {
-    await fetch('/api/todos', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(todos),
-    });
-  } catch {}
 }
 
 function buildSeed() {
@@ -116,7 +31,7 @@ function buildSeed() {
   };
   const today = yyyymmdd(now);
 
-  const todosList = [
+  return [
     {
       id: 1,
       text: 'Grocery shopping',
@@ -228,7 +143,17 @@ function buildSeed() {
       description: 'Sent a watch to the in-laws.',
     },
   ];
-  return todosList;
+}
+
+async function save() {
+  localStorage.setItem('todos', JSON.stringify(todos));
+  try {
+    await fetch('/api/todos', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(todos),
+    });
+  } catch {}
 }
 
 async function loadTodos() {
@@ -248,30 +173,7 @@ async function loadTodos() {
     localStorage.setItem('todos', JSON.stringify(todos));
     save();
   }
-  render();
 }
-
-loadTodos();
-
-let syncing = false;
-async function pollServer() {
-  if (syncing) return;
-  syncing = true;
-  try {
-    const res = await fetch('/api/todos');
-    const data = await res.json();
-    if (!Array.isArray(data)) return;
-    if (JSON.stringify(data) !== JSON.stringify(todos)) {
-      todos = data;
-      localStorage.setItem('todos', JSON.stringify(todos));
-      render();
-    }
-  } catch {
-  } finally {
-    syncing = false;
-  }
-}
-setInterval(pollServer, 2000);
 
 function formatDate(value) {
   const d = new Date(value);
@@ -289,7 +191,7 @@ function isOverdue(todo) {
   return !!todo.due && new Date(todo.due) < new Date();
 }
 
-function sortTodos(list) {
+function sortTodos(list, sortMode) {
   const byDue = (a, b) => {
     const ta = a.due || '';
     const tb = b.due || '';
@@ -309,175 +211,312 @@ function sortTodos(list) {
   return list.sort((a, b) => byDue(a, b) || byPriority(a, b));
 }
 
-function render() {
-  list.innerHTML = '';
-  const filtered = todos.filter((todo) => {
-    if (currentFilter === 'active' && todo.completed) return false;
-    if (currentFilter === 'completed' && !todo.completed) return false;
-    if (currentCategory && todo.category !== currentCategory) return false;
-    return true;
-  });
-  sortTodos(filtered);
+if (isAddPage) {
+  const form = document.getElementById('todo-form');
+  const input = document.getElementById('todo-input');
+  const micBtn = document.getElementById('mic-btn');
+  const dateInput = document.getElementById('todo-due-date');
+  const hoursSelect = document.getElementById('todo-due-hours');
+  const minutesSelect = document.getElementById('todo-due-minutes');
+  const priorityInput = document.getElementById('todo-priority');
+  const categoryInput = document.getElementById('todo-category');
+  const locationInput = document.getElementById('todo-location');
+  const contactInput = document.getElementById('todo-contact');
+  const descriptionInput = document.getElementById('todo-description');
+  const pageTitle = document.getElementById('page-title');
+  const submitBtn = document.getElementById('submit-btn');
 
-  filtered.forEach((todo) => {
-    const li = document.createElement('li');
-    const overdue = isOverdue(todo);
-    li.className =
-      'todo-item' +
-      (todo.completed ? ' completed' : '') +
-      (overdue ? ' overdue' : '') +
-      (todo.priority ? ' pri-row-' + todo.priority.toLowerCase() : '');
+  populateSelect(hoursSelect, 24, 2);
+  populateSelect(minutesSelect, 60, 2);
 
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = todo.completed;
-    checkbox.addEventListener('change', () => {
-      todo.completed = checkbox.checked;
-      save();
-      render();
-    });
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let listening = false;
 
-    const textWrap = document.createElement('div');
-    textWrap.style.flex = '1';
-
-    const span = document.createElement('span');
-    span.className = 'todo-text';
-    if (todo.priority) {
-      const pri = document.createElement('span');
-      pri.className = 'todo-priority pri-' + todo.priority.toLowerCase();
-      pri.textContent = todo.priority;
-      span.appendChild(pri);
-    }
-    span.appendChild(document.createTextNode(todo.text));
-    if (todo.category) {
-      const badge = document.createElement('span');
-      badge.className = 'todo-category cat-' + todo.category.toLowerCase();
-      badge.textContent = todo.category;
-      span.appendChild(badge);
-    }
-
-    textWrap.appendChild(span);
-    if (todo.due) {
-      const time = document.createElement('div');
-      time.className = 'todo-time';
-      time.textContent = 'Due ' + formatDate(todo.due);
-      textWrap.appendChild(time);
-    }
-    if (todo.location || todo.contact) {
-      const meta = document.createElement('div');
-      meta.className = 'todo-meta';
-      if (todo.location) {
-        const isUrl = /^https?:\/\/.+/.test(todo.location);
-        const span = document.createElement('span');
-        span.textContent = '\ud83d\udccd ' + todo.location;
-        if (isUrl) {
-          const a = document.createElement('a');
-          a.className = 'todo-location-link';
-          a.href = todo.location;
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer';
-          a.textContent = span.textContent;
-          meta.appendChild(a);
-        } else {
-          meta.appendChild(span);
-        }
-        if (todo.contact) meta.append('   ');
+  if (SR) {
+    recognition = new SR();
+    recognition.interimResults = true;
+    recognition.continuous = true;
+    recognition.onresult = (e) => {
+      let transcript = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        transcript += e.results[i][0].transcript;
       }
-      if (todo.contact) {
-        const span = document.createElement('span');
-        span.textContent = '\u2709 ' + todo.contact;
-        meta.appendChild(span);
-      }
-      textWrap.appendChild(meta);
-    }
-    if (todo.description) {
-      const desc = document.createElement('div');
-      desc.className = 'todo-desc';
-      desc.textContent = todo.description;
-      textWrap.appendChild(desc);
-    }
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'delete-btn';
-    deleteBtn.textContent = '\u00d7';
-    deleteBtn.addEventListener('click', () => {
-      todos = todos.filter((t) => t !== todo);
-      save();
-      render();
-    });
-
-    li.appendChild(checkbox);
-    li.appendChild(textWrap);
-    li.appendChild(deleteBtn);
-    list.appendChild(li);
-  });
-
-  const remaining = todos.filter((t) => !t.completed).length;
-  remainingCount.textContent = `${remaining} left`;
-}
-
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const text = input.value.trim();
-  if (!text) return;
-
-  let due = null;
-  if (dateInput.value) {
-    const h = hoursSelect.value;
-    const m = minutesSelect.value;
-    due = h && m ? `${dateInput.value}T${h}:${m}` : dateInput.value;
+      input.value = transcript.trim();
+    };
+    recognition.onend = () => {
+      listening = false;
+      micBtn.classList.remove('listening');
+      micBtn.textContent = '\ud83c\udfa4';
+    };
+    recognition.onerror = () => {
+      listening = false;
+      micBtn.classList.remove('listening');
+      micBtn.textContent = '\ud83c\udfa4';
+    };
+  } else {
+    micBtn.style.display = 'none';
   }
 
-  todos.push({
-    id: Date.now(),
-    text,
-    completed: false,
-    due,
-    priority: priorityInput.value || null,
-    category: categoryInput.value || null,
-    location: locationInput.value.trim() || null,
-    contact: contactInput.value.trim() || null,
-    description: descriptionInput.value.trim() || null,
+  function startListening() {
+    listening = true;
+    micBtn.classList.add('listening');
+    micBtn.textContent = '\u23f9';
+    input.value = '';
+    try {
+      recognition.start();
+    } catch {}
+  }
+
+  function stopListening() {
+    listening = false;
+    micBtn.classList.remove('listening');
+    micBtn.textContent = '\ud83c\udfa4';
+    recognition.stop();
+  }
+
+  micBtn.addEventListener('click', () => {
+    if (!recognition) return;
+    if (listening) stopListening();
+    else startListening();
   });
-  save();
-  render();
-  input.value = '';
-  dateInput.value = '';
-  hoursSelect.value = '';
-  minutesSelect.value = '';
-  locationInput.value = '';
-  contactInput.value = '';
-  descriptionInput.value = '';
-  categoryInput.value = '';
-  priorityInput.value = '';
-  input.focus();
-});
 
-clearCompletedBtn.addEventListener('click', () => {
-  todos = todos.filter((t) => !t.completed);
-  save();
-  render();
-});
+  const params = new URLSearchParams(location.search);
+  const editId = params.get('id');
+  let editingTodo = null;
 
-filterBtns.forEach((btn) => {
-  btn.addEventListener('click', () => {
-    filterBtns.forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentFilter = btn.dataset.filter;
+  async function initEdit() {
+    if (!editId) return;
+    await loadTodos();
+    editingTodo = todos.find((t) => String(t.id) === editId);
+    if (!editingTodo) return;
+    pageTitle.textContent = 'Edit Task';
+    submitBtn.textContent = 'Save Task';
+    input.value = editingTodo.text;
+    if (editingTodo.due) {
+      const parts = editingTodo.due.split('T');
+      dateInput.value = parts[0] || '';
+      if (parts[1]) {
+        const hm = parts[1].split(':');
+        hoursSelect.value = hm[0].padStart(2, '0');
+        minutesSelect.value = (hm[1] || '').slice(0, 2).padStart(2, '0');
+      }
+    }
+    priorityInput.value = editingTodo.priority || '';
+    categoryInput.value = editingTodo.category || '';
+    locationInput.value = editingTodo.location || '';
+    contactInput.value = editingTodo.contact || '';
+    descriptionInput.value = editingTodo.description || '';
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+
+    let due = null;
+    if (dateInput.value) {
+      const h = hoursSelect.value;
+      const m = minutesSelect.value;
+      due = h && m ? `${dateInput.value}T${h}:${m}` : dateInput.value;
+    }
+
+    const data = {
+      text,
+      due,
+      priority: priorityInput.value || null,
+      category: categoryInput.value || null,
+      location: locationInput.value.trim() || null,
+      contact: contactInput.value.trim() || null,
+      description: descriptionInput.value.trim() || null,
+    };
+
+    if (editingTodo) {
+      Object.assign(editingTodo, data);
+    } else {
+      todos.push({ id: Date.now(), completed: false, ...data });
+    }
+    save().then(() => {
+      location.href = 'index.html';
+    });
+  });
+
+  initEdit();
+}
+
+if (isViewPage) {
+  const list = document.getElementById('todo-list');
+  const remainingCount = document.getElementById('remaining-count');
+  const clearCompletedBtn = document.getElementById('clear-completed');
+  const filterBtns = document.querySelectorAll('.filter');
+  const catFilterBtns = document.querySelectorAll('.cat-filter');
+  const sortSelect = document.getElementById('sort-select');
+
+  let currentFilter = 'all';
+  let currentCategory = '';
+  let sortMode = 'due';
+
+  function render() {
+    list.innerHTML = '';
+    const filtered = todos.filter((todo) => {
+      if (currentFilter === 'active' && todo.completed) return false;
+      if (currentFilter === 'completed' && !todo.completed) return false;
+      if (currentCategory && todo.category !== currentCategory) return false;
+      return true;
+    });
+    sortTodos(filtered, sortMode);
+
+    filtered.forEach((todo) => {
+      const li = document.createElement('li');
+      const overdue = isOverdue(todo);
+      li.className =
+        'todo-item' +
+        (todo.completed ? ' completed' : '') +
+        (overdue ? ' overdue' : '') +
+        (todo.priority ? ' pri-row-' + todo.priority.toLowerCase() : '');
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = todo.completed;
+      checkbox.addEventListener('change', () => {
+        todo.completed = checkbox.checked;
+        save();
+        render();
+      });
+
+      const textWrap = document.createElement('div');
+      textWrap.style.flex = '1';
+
+      const span = document.createElement('span');
+      span.className = 'todo-text';
+      if (todo.priority) {
+        const pri = document.createElement('span');
+        pri.className = 'todo-priority pri-' + todo.priority.toLowerCase();
+        pri.textContent = todo.priority;
+        span.appendChild(pri);
+      }
+      span.appendChild(document.createTextNode(todo.text));
+      if (todo.category) {
+        const badge = document.createElement('span');
+        badge.className = 'todo-category cat-' + todo.category.toLowerCase();
+        badge.textContent = todo.category;
+        span.appendChild(badge);
+      }
+
+      textWrap.appendChild(span);
+      if (todo.due) {
+        const time = document.createElement('div');
+        time.className = 'todo-time';
+        time.textContent = 'Due ' + formatDate(todo.due);
+        textWrap.appendChild(time);
+      }
+      if (todo.location || todo.contact) {
+        const meta = document.createElement('div');
+        meta.className = 'todo-meta';
+        if (todo.location) {
+          const isUrl = /^https?:\/\/.+/.test(todo.location);
+          const span = document.createElement('span');
+          span.textContent = '\ud83d\udccd ' + todo.location;
+          if (isUrl) {
+            const a = document.createElement('a');
+            a.className = 'todo-location-link';
+            a.href = todo.location;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = span.textContent;
+            meta.appendChild(a);
+          } else {
+            meta.appendChild(span);
+          }
+          if (todo.contact) meta.append('   ');
+        }
+        if (todo.contact) {
+          const span = document.createElement('span');
+          span.textContent = '\u2709 ' + todo.contact;
+          meta.appendChild(span);
+        }
+        textWrap.appendChild(meta);
+      }
+      if (todo.description) {
+        const desc = document.createElement('div');
+        desc.className = 'todo-desc';
+        desc.textContent = todo.description;
+        textWrap.appendChild(desc);
+      }
+
+      const editBtn = document.createElement('a');
+      editBtn.className = 'edit-btn';
+      editBtn.href = 'add.html?id=' + todo.id;
+      editBtn.textContent = '\u270e';
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.textContent = '\u00d7';
+      deleteBtn.addEventListener('click', () => {
+        todos = todos.filter((t) => t !== todo);
+        save();
+        render();
+      });
+
+      li.appendChild(checkbox);
+      li.appendChild(textWrap);
+      li.appendChild(editBtn);
+      li.appendChild(deleteBtn);
+      list.appendChild(li);
+    });
+
+    const remaining = todos.filter((t) => !t.completed).length;
+    remainingCount.textContent = `${remaining} left`;
+  }
+
+  clearCompletedBtn.addEventListener('click', () => {
+    todos = todos.filter((t) => !t.completed);
+    save();
     render();
   });
-});
 
-catFilterBtns.forEach((btn) => {
-  btn.addEventListener('click', () => {
-    catFilterBtns.forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentCategory = btn.dataset.category;
+  filterBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      render();
+    });
+  });
+
+  catFilterBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      catFilterBtns.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCategory = btn.dataset.category;
+      render();
+    });
+  });
+
+  sortSelect.addEventListener('change', () => {
+    sortMode = sortSelect.value;
     render();
   });
-});
 
-sortSelect.addEventListener('change', () => {
-  sortMode = sortSelect.value;
-  render();
-});
+  loadTodos().then(render);
+
+  let syncing = false;
+  async function pollServer() {
+    if (syncing) return;
+    syncing = true;
+    try {
+      const res = await fetch('/api/todos');
+      const data = await res.json();
+      if (!Array.isArray(data)) return;
+      if (JSON.stringify(data) !== JSON.stringify(todos)) {
+        todos = data;
+        localStorage.setItem('todos', JSON.stringify(todos));
+        render();
+      }
+    } catch {
+    } finally {
+      syncing = false;
+    }
+  }
+  setInterval(pollServer, 2000);
+}

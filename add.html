@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Task</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <div class="header-row">
+      <a class="back-btn" href="index.html">&larr; Back</a>
+      <h1 id="page-title">Add Task</h1>
+    </div>
+    <form id="todo-form">
+      <div class="input-row">
+        <input type="text" id="todo-input" placeholder="What needs to be done?" autocomplete="off" required>
+        <button type="button" id="mic-btn" title="Voice input">&#127908;</button>
+      </div>
+      <div class="datetime-row">
+        <label>Date <input type="date" id="todo-due-date"></label>
+        <div class="time-select">
+          <label>Time</label>
+          <div>
+            <select id="todo-due-hours"></select>
+            <span>:</span>
+            <select id="todo-due-minutes"></select>
+          </div>
+        </div>
+      </div>
+      <div class="extra-row">
+        <select id="todo-priority">
+          <option value="">Priority</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
+        <select id="todo-category">
+          <option value="">Category</option>
+          <option value="Work">Work</option>
+          <option value="Personal">Personal</option>
+          <option value="Health">Health</option>
+          <option value="Family">Family</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="Home">Home</option>
+          <option value="Shopping">Shopping</option>
+        </select>
+        <input type="text" id="todo-location" placeholder="Google Maps link (optional)" autocomplete="off">
+        <input type="text" id="todo-contact" placeholder="Contact (optional)" autocomplete="off">
+      </div>
+      <textarea id="todo-description" placeholder="Description (optional)" rows="2"></textarea>
+      <button type="submit" id="submit-btn">Add Task</button>
+    </form>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

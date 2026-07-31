@@ -30,6 +30,40 @@ h1 {
   margin-bottom: 20px;
 }
 
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.header-row h1 {
+  margin: 0;
+}
+
+.add-task-btn {
+  background: #667eea;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.add-task-btn:hover {
+  background: #5a6fd6;
+}
+
+.back-btn {
+  color: #667eea;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.back-btn:hover {
+  text-decoration: underline;
+}
+
 .input-row {
   display: flex;
   gap: 8px;
@@ -320,6 +354,19 @@ button:hover {
 
 .delete-btn:hover {
   background: #fdecea;
+}
+
+.edit-btn {
+  background: transparent;
+  color: #888;
+  padding: 4px 8px;
+  font-size: 1rem;
+  text-decoration: none;
+}
+
+.edit-btn:hover {
+  background: #f0f0f0;
+  color: #333;
 }
 
 .filters {
